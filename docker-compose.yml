@@ -1,0 +1,47 @@
+version: "3.6"
+services:
+  db_stat:
+    container_name: db_stat
+    build:
+      context: docker/postgresql
+      dockerfile: Dockerfile
+    hostname: postgres
+    environment:
+      POSTGRES_USER: stat
+      POSTGRES_DB: stat
+      POSTGRES_PASSWORD: stat
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U stat" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+    ports:
+      - 5432:5432
+    volumes:
+      - ./docker/postgresql/.pgdata:/var/lib/postgresql/data
+
+  app_stat:
+    container_name: app_stat
+    platform: linux/x86_64
+    depends_on:
+      - db_stat
+    build:
+      context: .
+      dockerfile: docker/stat/Dockerfile
+    ports:
+      - 8000:8000
+    volumes:
+      - .:/code/
+    environment:
+      PYTHONPATH: /code/
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: "bridge"
+volumes:
+  db-data:
+    driver: local
